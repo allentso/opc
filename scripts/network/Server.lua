@@ -108,6 +108,24 @@ end
 -- 真实 LLM API 调用
 -- ============================================================
 
+local function _truncateForLog(s, maxLen)
+    if not s or s == "" then return "(empty)" end
+    maxLen = maxLen or 800
+    if #s <= maxLen then return s end
+    return s:sub(1, maxLen) .. "...<truncated len=" .. tostring(#s) .. ">"
+end
+
+--- 从 OpenAI 兼容错误体中提取可读说明
+local function _formatApiError(data)
+    if type(data) ~= "table" or not data.error then return nil end
+    local e = data.error
+    if type(e) == "string" then return e end
+    if type(e) == "table" then
+        return e.message or e.msg or e.code or cjson.encode(e)
+    end
+    return nil
+end
+
 function _callLLM(connection, requestId, dept, systemPrompt, userMessage)
     local messages = {
         { role = "system", content = systemPrompt },
@@ -130,27 +148,50 @@ function _callLLM(connection, requestId, dept, systemPrompt, userMessage)
         :AddHeader("Authorization", "Bearer " .. LLMConfig.API_KEY)
         :SetBody(requestBody)
         :OnSuccess(function(client, response)
+            local body = response.dataAsString or ""
             if not response.success then
                 print("[Server] HTTP failed, status: " .. tostring(response.statusCode))
-                _sendError(connection, requestId, "HTTP " .. tostring(response.statusCode))
+                print("[Server] Response body: " .. _truncateForLog(body, 1200))
+                _sendError(connection, requestId, "HTTP " .. tostring(response.statusCode) .. ": " .. _truncateForLog(body, 200))
                 return
             end
 
-            local ok, data = pcall(cjson.decode, response.dataAsString)
+            local ok, data = pcall(cjson.decode, body)
             if not ok then
                 print("[Server] JSON parse error: " .. tostring(data))
+                print("[Server] Raw body: " .. _truncateForLog(body, 1200))
                 _sendError(connection, requestId, "JSON parse error")
                 return
             end
 
-            -- 提取回复文本
+            local apiErr = _formatApiError(data)
+            if apiErr then
+                print("[Server] LLM API error: " .. tostring(apiErr))
+                print("[Server] Full body: " .. _truncateForLog(body, 1200))
+                _sendError(connection, requestId, "API: " .. _truncateForLog(tostring(apiErr), 300))
+                return
+            end
+
+            -- 提取回复文本（部分厂商 content 为分段表）
             local content = ""
             if data.choices and data.choices[1] and data.choices[1].message then
-                content = data.choices[1].message.content or ""
+                local msg = data.choices[1].message
+                local c = msg.content
+                if type(c) == "string" then
+                    content = c
+                elseif type(c) == "table" then
+                    for _, part in ipairs(c) do
+                        if type(part) == "string" then
+                            content = content .. part
+                        elseif type(part) == "table" and part.text then
+                            content = content .. tostring(part.text)
+                        end
+                    end
+                end
             end
 
             if content == "" then
-                print("[Server] WARNING: empty response from LLM")
+                print("[Server] WARNING: empty choices/content, body: " .. _truncateForLog(body, 1200))
                 content = "（AI暂时无法回应）"
             end
 
