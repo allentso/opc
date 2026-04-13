@@ -1,0 +1,29 @@
+# 构建产物
+.build/
+dist/
+
+# 引擎内部（只读，非用户代码）
+.emmylua/
+engine-docs/
+examples/
+templates/
+urhox-libs/
+lua-tools/
+schemas/
+.claude/
+.agent/
+.cli/
+.tmp/
+
+# 项目配置（引擎生成）
+.project/
+
+# 日志
+logs/
+
+# 敏感配置（含 API Key）
+scripts/config/LLMConfig.lua
+
+# OS
+.DS_Store
+Thumbs.db
