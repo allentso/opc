@@ -148,11 +148,21 @@ function _callLLM(connection, requestId, dept, systemPrompt, userMessage)
     })
 
     local apiUrl = _normalizeApiUrl(LLMConfig.API_URL)
-    print("[Server] LLM POST url: " .. apiUrl)
+    -- 若引擎访问公网 HTTPS 时出现极快 404、仅 OnError、无响应体，多为运行环境或引擎 HTTP 栈中间层问题。
+    -- 可在 LLMConfig 中设置 HTTP_RELAY_URL = "http://127.0.0.1:8765/api/v3/chat/completions"，
+    -- 与本仓库 scripts/tools/ark_http_relay.py 同机启动，由系统 Python 转发至真实 API_URL（HTTPS）。
+    local postUrl = apiUrl
+    local relay = LLMConfig.HTTP_RELAY_URL
+    if type(relay) == "string" and relay:match("%S") then
+        postUrl = _normalizeApiUrl(relay)
+        print("[Server] LLM using HTTP_RELAY_URL (engine → local relay): " .. postUrl)
+    end
+    print("[Server] LLM upstream (config): " .. apiUrl)
+    print("[Server] LLM POST url (actual): " .. postUrl)
     print("[Server] LLM model field: " .. tostring(LLMConfig.MODEL))
 
     http:Create()
-        :SetUrl(apiUrl)
+        :SetUrl(postUrl)
         :SetMethod(HTTP_POST)
         :SetContentType("application/json")
         :AddHeader("Accept", "application/json")
@@ -213,8 +223,15 @@ function _callLLM(connection, requestId, dept, systemPrompt, userMessage)
             _sendResponse(connection, requestId, dept, content)
         end)
         :OnError(function(client, statusCode, error)
-            print("[Server] HTTP error: code=" .. tostring(statusCode) .. " err=" .. tostring(error))
-            _sendError(connection, requestId, "Network error: " .. tostring(error))
+            print("[Server] HTTP OnError statusCode=" .. tostring(statusCode) .. " err=" .. tostring(error))
+            print("[Server] OnError client type=" .. type(client) .. " repr=" .. tostring(client))
+            local hint = ""
+            if relay and type(relay) == "string" and relay:match("%S") then
+                hint = "（已用中继仍失败，请查 relay 日志与端口）"
+            else
+                hint = "（若为极快 404 且无 body，多为引擎/环境 HTTPS 中间层；可试 LLMConfig.HTTP_RELAY_URL + scripts/tools/ark_http_relay.py）"
+            end
+            _sendError(connection, requestId, "Network error: " .. tostring(error) .. hint)
         end)
         :Send()
 end
