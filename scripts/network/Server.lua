@@ -115,6 +115,14 @@ local function _truncateForLog(s, maxLen)
     return s:sub(1, maxLen) .. "...<truncated len=" .. tostring(#s) .. ">"
 end
 
+--- 去掉首尾空白与末尾 /，避免 /chat/completions/ 等导致网关 404
+local function _normalizeApiUrl(url)
+    if not url or url == "" then return url end
+    url = url:match("^%s*(.-)%s*$") or url
+    url = url:gsub("/+$", "")
+    return url
+end
+
 --- 从 OpenAI 兼容错误体中提取可读说明
 local function _formatApiError(data)
     if type(data) ~= "table" or not data.error then return nil end
@@ -139,12 +147,16 @@ function _callLLM(connection, requestId, dept, systemPrompt, userMessage)
         temperature = LLMConfig.TEMPERATURE,
     })
 
-    print("[Server] Calling LLM API: " .. LLMConfig.API_URL:sub(1, 60) .. "...")
+    local apiUrl = _normalizeApiUrl(LLMConfig.API_URL)
+    print("[Server] LLM POST url: " .. apiUrl)
+    print("[Server] LLM model field: " .. tostring(LLMConfig.MODEL))
 
     http:Create()
-        :SetUrl(LLMConfig.API_URL)
+        :SetUrl(apiUrl)
         :SetMethod(HTTP_POST)
         :SetContentType("application/json")
+        :AddHeader("Accept", "application/json")
+        :AddHeader("User-Agent", "UrhoX-LLM-Proxy/1.0")
         :AddHeader("Authorization", "Bearer " .. LLMConfig.API_KEY)
         :SetBody(requestBody)
         :OnSuccess(function(client, response)
