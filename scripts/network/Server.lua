@@ -108,32 +108,6 @@ end
 -- 真实 LLM API 调用
 -- ============================================================
 
-local function _truncateForLog(s, maxLen)
-    if not s or s == "" then return "(empty)" end
-    maxLen = maxLen or 800
-    if #s <= maxLen then return s end
-    return s:sub(1, maxLen) .. "...<truncated len=" .. tostring(#s) .. ">"
-end
-
---- 去掉首尾空白与末尾 /，避免 /chat/completions/ 等导致网关 404
-local function _normalizeApiUrl(url)
-    if not url or url == "" then return url end
-    url = url:match("^%s*(.-)%s*$") or url
-    url = url:gsub("/+$", "")
-    return url
-end
-
---- 从 OpenAI 兼容错误体中提取可读说明
-local function _formatApiError(data)
-    if type(data) ~= "table" or not data.error then return nil end
-    local e = data.error
-    if type(e) == "string" then return e end
-    if type(e) == "table" then
-        return e.message or e.msg or e.code or cjson.encode(e)
-    end
-    return nil
-end
-
 function _callLLM(connection, requestId, dept, systemPrompt, userMessage)
     local messages = {
         { role = "system", content = systemPrompt },
@@ -147,73 +121,36 @@ function _callLLM(connection, requestId, dept, systemPrompt, userMessage)
         temperature = LLMConfig.TEMPERATURE,
     })
 
-    local apiUrl = _normalizeApiUrl(LLMConfig.API_URL)
-    -- 若引擎访问公网 HTTPS 时出现极快 404、仅 OnError、无响应体，多为运行环境或引擎 HTTP 栈中间层问题。
-    -- 可在 LLMConfig 中设置 HTTP_RELAY_URL = "http://127.0.0.1:8765/api/v3/chat/completions"，
-    -- 与本仓库 scripts/tools/ark_http_relay.py 同机启动，由系统 Python 转发至真实 API_URL（HTTPS）。
-    local postUrl = apiUrl
-    local relay = LLMConfig.HTTP_RELAY_URL
-    if type(relay) == "string" and relay:match("%S") then
-        postUrl = _normalizeApiUrl(relay)
-        print("[Server] LLM using HTTP_RELAY_URL (engine → local relay): " .. postUrl)
-    end
-    print("[Server] LLM upstream (config): " .. apiUrl)
-    print("[Server] LLM POST url (actual): " .. postUrl)
-    print("[Server] LLM model field: " .. tostring(LLMConfig.MODEL))
+    print("[Server] Calling LLM API: " .. LLMConfig.API_URL:sub(1, 60) .. "...")
 
     http:Create()
-        :SetUrl(postUrl)
+        :SetUrl(LLMConfig.API_URL)
         :SetMethod(HTTP_POST)
         :SetContentType("application/json")
-        :AddHeader("Accept", "application/json")
-        :AddHeader("User-Agent", "UrhoX-LLM-Proxy/1.0")
         :AddHeader("Authorization", "Bearer " .. LLMConfig.API_KEY)
         :SetBody(requestBody)
         :OnSuccess(function(client, response)
-            local body = response.dataAsString or ""
             if not response.success then
                 print("[Server] HTTP failed, status: " .. tostring(response.statusCode))
-                print("[Server] Response body: " .. _truncateForLog(body, 1200))
-                _sendError(connection, requestId, "HTTP " .. tostring(response.statusCode) .. ": " .. _truncateForLog(body, 200))
+                _sendError(connection, requestId, "HTTP " .. tostring(response.statusCode))
                 return
             end
 
-            local ok, data = pcall(cjson.decode, body)
+            local ok, data = pcall(cjson.decode, response.dataAsString)
             if not ok then
                 print("[Server] JSON parse error: " .. tostring(data))
-                print("[Server] Raw body: " .. _truncateForLog(body, 1200))
                 _sendError(connection, requestId, "JSON parse error")
                 return
             end
 
-            local apiErr = _formatApiError(data)
-            if apiErr then
-                print("[Server] LLM API error: " .. tostring(apiErr))
-                print("[Server] Full body: " .. _truncateForLog(body, 1200))
-                _sendError(connection, requestId, "API: " .. _truncateForLog(tostring(apiErr), 300))
-                return
-            end
-
-            -- 提取回复文本（部分厂商 content 为分段表）
+            -- 提取回复文本
             local content = ""
             if data.choices and data.choices[1] and data.choices[1].message then
-                local msg = data.choices[1].message
-                local c = msg.content
-                if type(c) == "string" then
-                    content = c
-                elseif type(c) == "table" then
-                    for _, part in ipairs(c) do
-                        if type(part) == "string" then
-                            content = content .. part
-                        elseif type(part) == "table" and part.text then
-                            content = content .. tostring(part.text)
-                        end
-                    end
-                end
+                content = data.choices[1].message.content or ""
             end
 
             if content == "" then
-                print("[Server] WARNING: empty choices/content, body: " .. _truncateForLog(body, 1200))
+                print("[Server] WARNING: empty response from LLM")
                 content = "（AI暂时无法回应）"
             end
 
@@ -223,15 +160,8 @@ function _callLLM(connection, requestId, dept, systemPrompt, userMessage)
             _sendResponse(connection, requestId, dept, content)
         end)
         :OnError(function(client, statusCode, error)
-            print("[Server] HTTP OnError statusCode=" .. tostring(statusCode) .. " err=" .. tostring(error))
-            print("[Server] OnError client type=" .. type(client) .. " repr=" .. tostring(client))
-            local hint = ""
-            if relay and type(relay) == "string" and relay:match("%S") then
-                hint = "（已用中继仍失败，请查 relay 日志与端口）"
-            else
-                hint = "（若为极快 404 且无 body，多为引擎/环境 HTTPS 中间层；可试 LLMConfig.HTTP_RELAY_URL + scripts/tools/ark_http_relay.py）"
-            end
-            _sendError(connection, requestId, "Network error: " .. tostring(error) .. hint)
+            print("[Server] HTTP error: code=" .. tostring(statusCode) .. " err=" .. tostring(error))
+            _sendError(connection, requestId, "Network error: " .. tostring(error))
         end)
         :Send()
 end

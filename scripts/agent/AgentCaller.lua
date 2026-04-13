@@ -26,14 +26,17 @@ local requestCounter_ = 0
 -- ============================================================
 
 function AgentCaller.InitClient()
-    -- 已连上常驻服则走 RemoteEvent；是否真调 LLM 由服务端 LLMConfig.IsConfigured() 决定。
-    -- 不要求客户端填写 API Key，避免双端配置不一致导致永远不调代理。
-    if network and network.serverConnection then
+    -- 检查是否有网络连接且 API 已配置
+    if network and network.serverConnection and LLMConfig.IsConfigured() then
         AgentCaller.mode = "api"
-        print("[AgentCaller] API mode (RemoteEvent → server); server decides real LLM vs fallback")
+        print("[AgentCaller] API mode enabled (via RemoteEvent)")
     else
         AgentCaller.mode = "simulate"
-        print("[AgentCaller] Simulate mode (no server connection)")
+        if not network or not network.serverConnection then
+            print("[AgentCaller] Simulate mode (no server connection)")
+        else
+            print("[AgentCaller] Simulate mode (LLM not configured)")
+        end
     end
 
     -- 监听服务端 LLM 回复
@@ -81,14 +84,10 @@ function HandleLLMError(eventType, eventData)
 
     local pending = pendingRequests_[requestId]
     if pending then
-        local detail = errorMsg or ""
-        if #detail > 120 then
-            detail = detail:sub(1, 117) .. "..."
-        end
-        local suffix = detail ~= "" and (" [" .. detail .. "]") or ""
+        -- 错误时用模拟回复兜底
         ChannelManager.PushMessage(pending.channel, {
             dept = pending.dept,
-            text = "（AI连接异常，自动回复）" .. AgentCaller._getSimulatedText(pending.dept, pending.phase) .. suffix,
+            text = "（AI连接异常，自动回复）" .. AgentCaller._getSimulatedText(pending.dept, pending.phase),
         })
         pendingRequests_[requestId] = nil
     end
