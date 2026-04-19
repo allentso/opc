@@ -11,9 +11,11 @@ local SecretChannelSystem = {}
 
 -- 追踪状态
 local stats_ = {
-    overwork_days = 0,        -- 工部连续满载天数
-    force_approve_count = 0,  -- 老板强制拍板次数
-    conflict_count = 0,       -- 部门冲突次数
+    overwork_days = 0,         -- 工部连续满载天数
+    force_approve_count = 0,   -- 老板强制拍板次数
+    conflict_count = 0,        -- 部门冲突次数
+    zhongshu_orders = 0,       -- 中书省累计参与订单数
+    acceptance_failed = 0,     -- 验收未通过次数
 }
 local unlocked_ = {}          -- 已解锁的频道集合
 --- 私下频道懒加载：每日首次打开时再生成（省 API）
@@ -25,11 +27,12 @@ function SecretChannelSystem.Init()
         overwork_days = 0,
         force_approve_count = 0,
         conflict_count = 0,
+        zhongshu_orders = 0,
+        acceptance_failed = 0,
     }
     unlocked_ = {}
     lazyFilled_ = {}
 
-    -- 监听相关事件
     EventBus.On(E.BOSS_SKILL_USED, function(skillId)
         if skillId == "force_approve" then
             stats_.force_approve_count = stats_.force_approve_count + 1
@@ -39,6 +42,26 @@ function SecretChannelSystem.Init()
 
     EventBus.On(E.DAY_START, function()
         SecretChannelSystem._resetDailyLazyFlags()
+    end)
+
+    -- 中书省参与订单（每次接订单且 departments 包含 zhongshu）
+    EventBus.On(E.ORDER_ACCEPTED, function(order)
+        if not order or not order.departments then return end
+        for _, d in ipairs(order.departments) do
+            if d == "zhongshu" then
+                stats_.zhongshu_orders = stats_.zhongshu_orders + 1
+                SecretChannelSystem.CheckUnlocks()
+                break
+            end
+        end
+    end)
+
+    -- 验收未通过
+    EventBus.On(E.WORKFLOW_ACCEPTANCE_PARSED, function(passed)
+        if passed == false then
+            stats_.acceptance_failed = stats_.acceptance_failed + 1
+            SecretChannelSystem.CheckUnlocks()
+        end
     end)
 end
 
@@ -104,6 +127,10 @@ function SecretChannelSystem.CheckUnlocks()
                 shouldUnlock = stats_.force_approve_count >= sc.threshold
             elseif sc.conditionType == "conflict_count" then
                 shouldUnlock = stats_.conflict_count >= sc.threshold
+            elseif sc.conditionType == "zhongshu_orders" then
+                shouldUnlock = stats_.zhongshu_orders >= sc.threshold
+            elseif sc.conditionType == "acceptance_failed" then
+                shouldUnlock = stats_.acceptance_failed >= sc.threshold
             end
 
             if shouldUnlock then

@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI公司总裁 — UI设计参考</title>
+<style>
+:root{
+  --bg:#F4F3EF;--card:#FFF;--acc:#D28232;--acc-l:#FBF0E4;--acc-d:#A85F1A;
+  --blue:#4A6BF5;--blue-l:#EEF1FE;
+  --green:#22A861;--green-l:#E6F7EF;
+  --red:#E84040;--red-l:#FEE8E8;
+  --yel:#E09820;--yel-l:#FEF5E0;
+  --t1:#1A1A22;--t2:#6B6B7A;--t3:#A0A0AF;
+  --bd:#E8E7E4;--bd2:#D0CFCC;
+  --zh:#7B68EE;--gb:#E87040;--mx:#20A8D8;
+  --sb:#1C1C23;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#DDD9D0;display:flex;flex-direction:column;align-items:center;padding:20px 12px 40px;font-family:'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;min-height:100vh;gap:14px}
+h1{font-size:15px;color:#555;font-weight:500;letter-spacing:.5px}
+.nav{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;max-width:400px}
+.nb{padding:5px 13px;border-radius:20px;border:none;background:#FFF;color:var(--t2);font-size:12px;cursor:pointer;font-family:inherit;transition:all .15s}
+.nb.on{background:var(--acc);color:#FFF;font-weight:600}
+.phone{width:375px;height:780px;background:var(--bg);border-radius:38px;overflow:hidden;box-shadow:0 24px 64px rgba(0,0,0,.35),inset 0 0 0 1px rgba(255,255,255,.45);position:relative;flex-shrink:0}
+.scr{display:none;height:100%;flex-direction:column}
+.scr.on{display:flex}
+
+/* ─── STATUS BAR ─── */
+.sb{background:var(--card);padding:11px 14px 9px;display:flex;align-items:center;gap:7px;border-bottom:1px solid var(--bd);flex-shrink:0}
+.sb-co{font-size:14px;font-weight:700;color:var(--t1);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chip{padding:3px 7px;border-radius:20px;font-size:10px;font-weight:600;white-space:nowrap;cursor:pointer;border:none;font-family:inherit}
+.ch-o{background:var(--acc-l);color:var(--acc-d)}
+.ch-g{background:var(--green-l);color:var(--green)}
+.ch-r{background:var(--red-l);color:var(--red)}
+.ch-b{background:var(--blue-l);color:var(--blue)}
+.alert{background:var(--red-l);padding:5px 14px;font-size:11px;color:var(--red);font-weight:500;display:flex;align-items:center;gap:5px;flex-shrink:0}
+
+/* ─── SPLIT LAYOUT ─── */
+.split{display:flex;flex:1;overflow:hidden}
+
+/* ─── CHANNEL SIDEBAR ─── */
+.chs{width:70px;background:var(--sb);display:flex;flex-direction:column;align-items:center;padding:6px 0;gap:2px;overflow-y:auto;flex-shrink:0}
+.chs-lbl{font-size:8px;color:rgba(255,255,255,.25);text-transform:uppercase;letter-spacing:.5px;margin:5px 0 1px;width:100%;text-align:center}
+.ci{width:50px;height:50px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-direction:column;cursor:pointer;position:relative;transition:background .12s}
+.ci:hover{background:rgba(255,255,255,.08)}
+.ci.on{background:rgba(210,130,50,.2)}
+.ci.on::before{content:'';position:absolute;left:0;top:10px;bottom:10px;width:2.5px;background:var(--acc);border-radius:0 2px 2px 0}
+.ca{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#FFF}
+.cl{font-size:8px;color:rgba(255,255,255,.4);margin-top:2px;text-align:center;line-height:1.2}
+.ci.on .cl{color:rgba(255,255,255,.8)}
+.bdg{position:absolute;top:2px;right:2px;background:var(--red);color:#FFF;font-size:8px;font-weight:700;padding:1px 4px;border-radius:8px;min-width:15px;text-align:center;border:1.5px solid var(--sb)}
+.cdiv{width:36px;height:1px;background:rgba(255,255,255,.1);margin:3px 0}
+
+/* ─── CHAT ─── */
+.chat{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.ch-hd{padding:9px 12px;background:var(--card);border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:7px;flex-shrink:0}
+.ch-ha{width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:13px;color:#FFF;flex-shrink:0}
+.ch-ht{font-size:13px;font-weight:600;color:var(--t1)}
+.ch-hs{font-size:10px;color:var(--t3);margin-left:auto}
+.msgs{flex:1;overflow-y:auto;padding:10px 10px 6px;display:flex;flex-direction:column;gap:7px}
+.sys{text-align:center;font-size:10px;color:var(--t3);background:var(--bd);padding:3px 9px;border-radius:10px;align-self:center}
+.mr{display:flex;align-items:flex-start;gap:7px}
+.mav{width:26px;height:26px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11px;color:#FFF;font-weight:700;flex-shrink:0;margin-top:1px}
+.mb{flex:1;max-width:calc(100% - 33px)}
+.mm{font-size:9px;color:var(--t3);margin-bottom:2px;display:flex;align-items:center;gap:3px}
+.mn{font-weight:600;font-size:10px}
+.bbl{background:var(--card);border-radius:0 9px 9px 9px;padding:7px 9px;font-size:12px;color:var(--t1);line-height:1.5;box-shadow:0 1px 3px rgba(0,0,0,.05);border:1px solid var(--bd);display:inline-block;max-width:100%}
+.bbl.cfl{border-left:3px solid var(--red);background:var(--red-l)}
+.mr.boss{flex-direction:row-reverse}
+.mr.boss .bbl{background:var(--acc);color:#FFF;border-color:transparent;border-radius:9px 0 9px 9px}
+.mr.boss .mb{align-items:flex-end;display:flex;flex-direction:column}
+.incident{background:linear-gradient(135deg,#FEF5E0,#FEE8E8);border:1px solid var(--yel);border-radius:10px;padding:9px 11px}
+.inct{font-weight:700;color:var(--yel);font-size:12px;margin-bottom:3px}
+.ci-input{padding:9px 10px;background:var(--card);border-top:1px solid var(--bd);display:flex;align-items:center;gap:7px;flex-shrink:0}
+.ci-input input{flex:1;border:1px solid var(--bd);border-radius:18px;padding:7px 12px;font-size:12px;background:var(--bg);color:var(--t1);outline:none;font-family:inherit}
+.send{background:var(--acc);color:#FFF;border:none;border-radius:18px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit}
+
+/* ─── TAB BAR ─── */
+.tab{display:flex;background:var(--card);border-top:1px solid var(--bd);flex-shrink:0}
+.ti{flex:1;display:flex;flex-direction:column;align-items:center;padding:7px 4px 9px;cursor:pointer;font-size:9px;color:var(--t3);gap:2px;border:none;background:none;font-family:inherit}
+.ti.on{color:var(--acc)}
+.ticon{font-size:19px}
+
+/* ─── WORKBENCH ─── */
+.wb{flex:1;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:10px}
+.strat-bn{background:var(--card);border-radius:10px;padding:11px 13px;display:flex;align-items:center;border:1.5px solid var(--acc);cursor:pointer}
+.strat-bn:hover{background:var(--acc-l)}
+.sb-lbl{font-size:10px;color:var(--t2);margin-bottom:1px}
+.sb-val{font-size:13px;font-weight:600;color:var(--acc);display:flex;align-items:center;gap:5px}
+.sec{font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:-2px}
+.oc{background:var(--card);border-radius:10px;padding:12px;border:1px solid var(--bd)}
+.oc-hd{display:flex;align-items:center;gap:7px;margin-bottom:7px}
+.otyp{font-size:10px;font-weight:600;padding:2px 7px;border-radius:5px}
+.otit{font-size:13px;font-weight:600;color:var(--t1);flex:1;line-height:1.3}
+.otmr{font-size:10px;color:var(--red);font-weight:600;background:var(--red-l);padding:2px 6px;border-radius:5px;flex-shrink:0}
+.ometa{display:flex;align-items:center;gap:6px;font-size:10px;color:var(--t2);margin-bottom:8px}
+.rew{font-size:14px;font-weight:700;color:var(--green)}
+.acc-btn{background:var(--acc);color:#FFF;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:600;width:100%;cursor:pointer;font-family:inherit}
+.acc-btn:hover{background:var(--acc-d)}
+.pc{background:var(--card);border-radius:10px;padding:12px;border:1px solid var(--bd);border-left:3px solid var(--blue)}
+.pc-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:7px}
+.pc-t{font-size:12px;font-weight:600;color:var(--t1)}
+.stg{font-size:9px;font-weight:600;padding:2px 6px;border-radius:4px;background:var(--blue-l);color:var(--blue)}
+.stg.cfl{background:var(--red-l);color:var(--red)}
+.pb-w{height:5px;background:var(--bd);border-radius:3px;overflow:hidden;margin-bottom:5px}
+.pb-f{height:100%;border-radius:3px}
+.pl{display:flex;justify-content:space-between;font-size:8px;color:var(--t3)}
+
+/* ─── COMMAND ─── */
+.cmd{flex:1;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:10px}
+.sg{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.sk{background:var(--card);border-radius:9px;padding:11px;border:1px solid var(--bd);cursor:pointer;transition:all .15s;position:relative}
+.sk.av{border-color:var(--acc)}
+.sk.cd{opacity:.5}
+.sk-i{font-size:20px;margin-bottom:5px}
+.sk-n{font-size:11px;font-weight:600;color:var(--t1);margin-bottom:2px}
+.sk-d{font-size:10px;color:var(--t2);line-height:1.4}
+.sk-c{font-size:10px;color:var(--red);margin-top:4px}
+.cdb{position:absolute;top:7px;right:7px;font-size:9px;font-weight:600;color:var(--t3);background:var(--bd);padding:2px 4px;border-radius:4px}
+.dc{background:var(--card);border-radius:9px;padding:11px;border:1px solid var(--bd);display:flex;align-items:center;gap:9px}
+.dav{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#FFF;flex-shrink:0}
+.dn{font-size:12px;font-weight:600;color:var(--t1)}
+.ds{font-size:10px;color:var(--t2);margin-bottom:4px}
+.wl-b{height:4px;background:var(--bd);border-radius:2px;overflow:hidden}
+.wl-f{height:100%;border-radius:2px}
+.wl-l{font-size:9px;color:var(--t3);margin-top:2px}
+.intel{background:var(--card);border-radius:9px;padding:11px;border:1px solid var(--yel);border-left:3px solid var(--yel)}
+.intel-t{font-size:10px;font-weight:700;color:var(--yel);margin-bottom:3px}
+.intel-b{font-size:11px;color:var(--t2);line-height:1.5;margin-bottom:7px}
+.intel-acts{display:flex;gap:5px}
+.ia-btn{flex:1;padding:6px;border-radius:6px;font-size:10px;cursor:pointer;font-family:inherit}
+.ia-p{border:1px solid var(--mx);background:none;color:var(--mx)}
+.ia-n{border:1px solid var(--bd2);background:none;color:var(--t3)}
+
+/* ─── FINANCE ─── */
+.fin{flex:1;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:10px}
+.stat3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px}
+.scard{background:var(--card);border-radius:9px;padding:10px 8px;text-align:center;border:1px solid var(--bd)}
+.sv{font-size:15px;font-weight:700;color:var(--t1)}
+.sl{font-size:9px;color:var(--t2);margin-top:1px}
+.sd{font-size:9px;font-weight:500;margin-top:2px}
+.chart-c{background:var(--card);border-radius:9px;padding:12px;border:1px solid var(--bd)}
+.ct{font-size:10px;font-weight:600;color:var(--t2);margin-bottom:10px}
+.mc{display:flex;align-items:flex-end;gap:3px;height:55px}
+.bc{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px}
+.bar{width:100%;border-radius:3px 3px 0 0;background:var(--acc-l)}
+.bar.on{background:var(--acc)}
+.bl{font-size:8px;color:var(--t3)}
+.tx{display:flex;flex-direction:column;gap:0}
+.txi{display:flex;align-items:center;padding:9px 0;border-bottom:1px solid var(--bd);gap:9px}
+.txi:last-child{border-bottom:none}
+.txico{width:30px;height:30px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0}
+.txin{flex:1}
+.txn{font-size:12px;font-weight:500;color:var(--t1)}
+.txt{font-size:9px;color:var(--t3)}
+.txa{font-size:13px;font-weight:700}
+.inc{color:var(--green)}
+.exp{color:var(--red)}
+
+/* ─── CHANNEL LIST OVERLAY ─── */
+.ov{position:absolute;inset:0;background:var(--bg);z-index:20;display:flex;flex-direction:column}
+.ov-hd{padding:13px 14px;background:var(--card);border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:9px;flex-shrink:0}
+.ov-back{width:28px;height:28px;border:none;background:none;font-size:20px;cursor:pointer;color:var(--t1);display:flex;align-items:center;justify-content:center;border-radius:6px}
+.ov-back:hover{background:var(--bd)}
+.ov-t{font-size:15px;font-weight:600;color:var(--t1)}
+.cl-list{flex:1;overflow-y:auto;padding:10px}
+.cg-t{font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;padding:7px 0 3px}
+.cli{display:flex;align-items:center;gap:11px;padding:9px;border-radius:9px;cursor:pointer;background:var(--card);margin-bottom:3px;transition:background .12s}
+.cli:hover{background:var(--acc-l)}
+.cli-av{width:38px;height:38px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:17px;color:#FFF;flex-shrink:0}
+.cli-in{flex:1;overflow:hidden}
+.cli-n{font-size:13px;font-weight:600;color:var(--t1);display:flex;align-items:center;gap:5px}
+.cli-p{font-size:11px;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+.cli-bdg{background:var(--red);color:#FFF;font-size:9px;font-weight:700;padding:2px 5px;border-radius:9px;min-width:18px;text-align:center;flex-shrink:0}
+.cli-lk{font-size:14px;color:var(--t3)}
+.cli.locked{opacity:.5;cursor:not-allowed}
+.cli.locked:hover{background:var(--card)}
+.sec-tag{font-size:8px;font-weight:600;background:#2D2D3A;color:rgba(255,255,255,.6);padding:2px 5px;border-radius:3px}
+.unlock-tip{font-size:10px;color:var(--acc);margin-top:2px}
+
+/* ─── STRATEGY PAGE ─── */
+.strat-pg{flex:1;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:9px}
+.strat-note{font-size:11px;color:var(--t2);line-height:1.6;background:var(--acc-l);padding:9px 11px;border-radius:8px;border-left:3px solid var(--acc)}
+.so{background:var(--card);border:1.5px solid var(--bd);border-radius:9px;padding:11px;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:9px}
+.so:hover,.so.sel{border-color:var(--acc);background:var(--acc-l)}
+.so-i{font-size:20px;flex-shrink:0}
+.so-n{font-size:12px;font-weight:600;color:var(--t1)}
+.so-e{font-size:10px;color:var(--t2);margin-top:2px;line-height:1.4}
+.so.locked{opacity:.5;cursor:not-allowed}
+.so.locked:hover{border-color:var(--bd);background:var(--card)}
+.cfm-btn{background:var(--acc);color:#FFF;border:none;border-radius:9px;padding:12px;width:100%;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;margin-top:4px}
+
+/* ─── ACCEPTANCE ─── */
+.acc-pg{flex:1;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:9px}
+.acc-res{background:var(--card);border-radius:10px;overflow:hidden;border:1px solid var(--bd)}
+.acc-hd{padding:11px 13px;display:flex;align-items:center;gap:9px}
+.acc-hd.pass{background:var(--green-l)}
+.acc-hd.fail{background:var(--red-l)}
+.acc-sc{font-size:30px;font-weight:800;width:50px;text-align:center;flex-shrink:0}
+.acc-sc.pass{color:var(--green)}
+.acc-sc.fail{color:var(--red)}
+.acc-n{font-size:13px;font-weight:600;color:var(--t1)}
+.acc-v{font-size:11px;color:var(--t2);margin-top:1px}
+.acc-bd{padding:11px 13px}
+.acc-comment{font-size:11px;color:var(--t2);line-height:1.6;border-left:3px solid var(--bd2);padding-left:9px;margin-bottom:10px}
+.acc-items{display:flex;flex-direction:column;gap:5px}
+.acc-item{display:flex;align-items:center;gap:7px;font-size:11px;color:var(--t1)}
+.sp{font-size:10px;font-weight:600;padding:2px 5px;border-radius:4px;flex-shrink:0}
+.sp.hi{background:var(--green-l);color:var(--green)}
+.sp.md{background:var(--yel-l);color:var(--yel)}
+.sp.lo{background:var(--red-l);color:var(--red)}
+.settle{background:var(--green-l);border-radius:9px;padding:11px 13px}
+.set-t{font-size:12px;font-weight:600;color:var(--green);margin-bottom:3px}
+.set-b{font-size:11px;color:var(--t1);line-height:1.7}
+
+/* ─── SECRET CHANNEL ─── */
+.sec-scr{background:#12121A}
+.sec-sb{background:#1C1C23;padding:11px 14px 9px;display:flex;align-items:center;gap:7px;border-bottom:1px solid rgba(255,255,255,.07);flex-shrink:0}
+.sec-t{font-size:14px;font-weight:600;color:rgba(255,255,255,.85)}
+.ro-tag{font-size:8px;background:rgba(255,255,255,.1);color:rgba(255,255,255,.4);padding:2px 5px;border-radius:4px}
+.dot{width:5px;height:5px;border-radius:50%;background:#FF4444;animation:pulse 1.5s ease-in-out infinite;margin-left:auto}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.sec-banner{background:#1C1C23;padding:6px 12px;font-size:10px;color:rgba(255,255,255,.4);flex-shrink:0;display:flex;align-items:center;gap:6px}
+.sec-msgs{flex:1;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:7px;background:#12121A}
+.sbbl{background:#2D2D3A;color:rgba(255,255,255,.82);border:1px solid rgba(255,255,255,.07);border-radius:0 9px 9px 9px;padding:7px 9px;font-size:12px;line-height:1.5;display:inline-block;max-width:100%}
+.sec-sys{text-align:center;font-size:9px;color:rgba(255,255,255,.2);background:rgba(255,255,255,.06);padding:3px 9px;border-radius:10px;align-self:center}
+.intel-card{background:rgba(255,160,0,.1);border:1px solid rgba(255,160,0,.25);border-radius:9px;padding:9px 11px}
+.ic-t{font-size:10px;font-weight:600;color:rgba(255,180,0,.9);margin-bottom:3px}
+.ic-b{font-size:10px;color:rgba(255,255,255,.4);margin-bottom:7px;line-height:1.5}
+.ic-acts{display:flex;gap:5px}
+.ia-go{flex:1;padding:6px;background:rgba(255,160,0,.18);border:1px solid rgba(255,160,0,.35);border-radius:6px;font-size:10px;color:rgba(255,180,0,.9);cursor:pointer;font-family:inherit}
+.ia-no{flex:1;padding:6px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:6px;font-size:10px;color:rgba(255,255,255,.35);cursor:pointer;font-family:inherit}
+.sec-lock{padding:9px 12px;background:#1C1C23;border-top:1px solid rgba(255,255,255,.07);text-align:center;font-size:11px;color:rgba(255,255,255,.25);flex-shrink:0}
+.sec-tab{display:flex;background:#1C1C23;border-top:1px solid rgba(255,255,255,.07);flex-shrink:0}
+.sec-ti{flex:1;display:flex;flex-direction:column;align-items:center;padding:7px 4px 9px;cursor:pointer;font-size:9px;color:rgba(255,255,255,.25);gap:2px;border:none;background:none;font-family:inherit}
+
+::-webkit-scrollbar{width:2px}
+::-webkit-scrollbar-thumb{background:var(--bd2);border-radius:1px}
+</style>
+</head>
+<body>
+
+<h1>AI公司总裁 · UI设计参考 · v0.4</h1>
+
+<div class="nav">
+  <button class="nb on" onclick="show('chat')">💬 消息主页</button>
+  <button class="nb" onclick="show('wb')">📋 工作台</button>
+  <button class="nb" onclick="show('cmd')">⚡ 指挥中心</button>
+  <button class="nb" onclick="show('fin')">📊 财务</button>
+  <button class="nb" onclick="show('chl')">📁 频道列表</button>
+  <button class="nb" onclick="show('str')">🎯 今日策略</button>
+  <button class="nb" onclick="show('acc')">📝 验收结果</button>
+  <button class="nb" onclick="show('sec')">🔒 私下频道</button>
+</div>
+
+<div class="phone">
+
+<!-- ════════════════ 1. CHAT ════════════════ -->
+<div class="scr on" id="s-chat">
+  <div class="sb">
+    <span class="sb-co">锐思AI工作室</span>
+    <button class="chip ch-o" onclick="show('str')">📌 均衡发展</button>
+    <span class="chip ch-g">★ +12</span>
+    <span class="chip ch-b">¥50,000</span>
+  </div>
+  <div class="alert">⚠️ 审查冲突 · 门下省打回 #8号，工部请查收</div>
+  <div class="split">
+    <!-- Left sidebar -->
+    <div class="chs">
+      <span class="chs-lbl">公开</span>
+      <div class="ci on">
+        <div class="ca" style="background:var(--acc)">📢</div>
+        <div class="cl">全局</div>
+      </div>
+      <div class="ci">
+        <div class="ca" style="background:var(--blue)">🔄</div>
+        <div class="cl">工作流</div>
+        <div class="bdg">3</div>
+      </div>
+      <div class="ci">
+        <div class="ca" style="background:var(--zh)">中</div>
+        <div class="cl">中书省</div>
+      </div>
+      <div class="ci">
+        <div class="ca" style="background:var(--gb)">工</div>
+        <div class="cl">工部</div>
+        <div class="bdg">2</div>
+      </div>
+      <div class="ci">
+        <div class="ca" style="background:var(--mx)">门</div>
+        <div class="cl">门下省</div>
+        <div class="bdg">2</div>
+      </div>
+      <div class="cdiv"></div>
+      <span class="chs-lbl">私下</span>
+      <div class="ci" onclick="show('sec')">
+        <div class="ca" style="background:#2D2D3A">👀</div>
+        <div class="cl" style="color:rgba(255,100,100,.75);font-size:7px">摸鱼群</div>
+        <div class="bdg" style="background:#FF4444">5</div>
+      </div>
+      <div class="ci">
+        <div class="ca" style="background:#2D2D3A">🤪</div>
+        <div class="cl" style="color:rgba(255,100,100,.75);font-size:7px">蛐蛐群</div>
+      </div>
+    </div>
+    <!-- Chat -->
+    <div class="chat">
+      <div class="ch-hd">
+        <div class="ch-ha" style="background:var(--acc)">📢</div>
+        <div class="ch-ht">全局公告</div>
+        <div class="ch-hs">第 3 天 · 下午</div>
+      </div>
+      <div class="msgs">
+        <div class="sys">☀️ 第 3 天开始了</div>
+        <div class="mr">
+          <div class="mav" style="background:var(--zh)">中</div>
+          <div class="mb">
+            <div class="mm"><span class="mn" style="color:var(--zh)">中书省·策划组</span><span>09:02</span></div>
+            <div class="bbl">今日市场出现3个新订单，建议优先承接品牌单，评估价值较高。</div>
+          </div>
+        </div>
+        <div class="mr">
+          <div class="mav" style="background:var(--gb)">工</div>
+          <div class="mb">
+            <div class="mm"><span class="mn" style="color:var(--gb)">工部·执行组</span><span>09:05</span></div>
+            <div class="bbl">当前工作量67%，再接一单可能触发高压状态，请老板知悉。</div>
+          </div>
+        </div>
+        <div class="mr boss">
+          <div class="mav" style="background:var(--acc)">👤</div>
+          <div class="mb">
+            <div class="mm" style="justify-content:flex-end"><span>09:08</span><span class="mn" style="color:var(--acc)">Boss</span></div>
+            <div class="bbl">@工部 先接品牌单，今天质量优先</div>
+          </div>
+        </div>
+        <div class="incident">
+          <div class="inct">⚠️ 奇观事故：审批无限循环</div>
+          <div style="font-size:11px;color:var(--t1);line-height:1.5">中书省方案刚通过，门下省立即打回。打回意见提交，中书省再次修改……已循环 3 次，工部无人干活。</div>
+        </div>
+        <div class="mr">
+          <div class="mav" style="background:var(--mx)">门</div>
+          <div class="mb">
+            <div class="mm"><span class="mn" style="color:var(--mx)">门下省·审查组</span><span>11:32</span></div>
+            <div class="bbl cfl">关于#7号：工部提交物存在3处合规风险，已打回，这是第2次退回。</div>
+          </div>
+        </div>
+        <div class="sys">📊 第3天结算 · 完成1单 · 收入¥24,000</div>
+      </div>
+      <div class="ci-input">
+        <input type="text" placeholder="@部门 下达命令…">
+        <button class="send">发送</button>
+      </div>
+    </div>
+  </div>
+  <div class="tab">
+    <button class="ti on" onclick="show('chat')"><div class="ticon">💬</div>消息</button>
+    <button class="ti" onclick="show('wb')"><div class="ticon">📋</div>工作台</button>
+    <button class="ti" onclick="show('cmd')"><div class="ticon">⚡</div>指挥</button>
+    <button class="ti" onclick="show('fin')"><div class="ticon">📊</div>财务</button>
+  </div>
+</div>
+
+<!-- ════════════════ 2. WORKBENCH ════════════════ -->
+<div class="scr" id="s-wb">
+  <div class="sb">
+    <span class="sb-co">工作台</span>
+    <div style="flex:1"></div>
+    <span class="chip ch-g">★ +12</span>
+    <span class="chip ch-b">¥50,000</span>
+  </div>
+  <div class="wb">
+    <div class="strat-bn" onclick="show('str')">
+      <div>
+        <div class="sb-lbl">今日策略方向</div>
+        <div class="sb-val">📌 均衡发展 <span style="font-size:10px;color:var(--t2);font-weight:400">审查+10% · 速度-5%</span></div>
+      </div>
+      <div style="margin-left:auto;color:var(--acc);font-size:18px">›</div>
+    </div>
+    <div class="sec">进行中 · 1单</div>
+    <div class="pc">
+      <div class="pc-hd">
+        <div class="pc-t">💎 品牌策划 · 奢侈品年终大促方案</div>
+        <div class="stg cfl">⚡ 冲突</div>
+      </div>
+      <div class="pb-w"><div class="pb-f" style="width:65%;background:var(--red)"></div></div>
+      <div class="pl"><span>接单</span><span>执行</span><span style="color:var(--red);font-weight:700">审查▲</span><span>验收</span><span>结算</span></div>
+      <div style="margin-top:7px;display:flex;align-items:center;font-size:10px">
+        <span style="color:var(--t2)">奖励¥28,000</span>
+        <span style="color:var(--red);font-weight:600;margin-left:auto">⚠ 门下省打回×2</span>
+      </div>
+    </div>
+    <div class="sec">可接取 · 3单</div>
+    <div class="oc">
+      <div class="oc-hd">
+        <span class="otyp" style="background:var(--red-l);color:var(--red)">🔥 热点速攻</span>
+        <span class="otmr">⏰ 剩23:41</span>
+      </div>
+      <div class="otit">AI生图工具爆火，写3条抖音脚本蹭热点</div>
+      <div class="ometa"><span>工部承接</span><span>·</span><span>难度⭐⭐</span></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:9px">
+        <span class="rew">¥12,000</span><span style="font-size:10px;color:var(--t2)">高品质+20%</span>
+      </div>
+      <button class="acc-btn">接取此订单</button>
+    </div>
+    <div class="oc">
+      <div class="oc-hd">
+        <span class="otyp" style="background:var(--blue-l);color:var(--blue)">📱 应用开发</span>
+      </div>
+      <div class="otit">开发宠物健康记录小程序MVP</div>
+      <div class="ometa"><span>工部+中书省</span><span>·</span><span>难度⭐⭐⭐</span></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:9px">
+        <span class="rew">¥18,500</span><span style="font-size:10px;color:var(--t2)">高品质+20%</span>
+      </div>
+      <button class="acc-btn">接取此订单</button>
+    </div>
+    <div class="oc" style="border:1.5px solid var(--yel)">
+      <div class="oc-hd">
+        <span class="otyp" style="background:var(--yel-l);color:var(--yel)">❓ 神秘订单</span>
+        <span style="font-size:10px;color:var(--t2);margin-left:auto">高风险高回报</span>
+      </div>
+      <div class="otit">甲方不透露需求，只说「你懂的」</div>
+      <div class="ometa"><span>未知部门</span><span>·</span><span>难度⭐⭐⭐⭐⭐</span></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:9px">
+        <span class="rew">¥45,000</span><span style="font-size:10px;color:var(--red)">风险：极高</span>
+      </div>
+      <button class="acc-btn" style="background:var(--yel)">接取此订单</button>
+    </div>
+  </div>
+  <div class="tab">
+    <button class="ti" onclick="show('chat')"><div class="ticon">💬</div>消息</button>
+    <button class="ti on" onclick="show('wb')"><div class="ticon">📋</div>工作台</button>
+    <button class="ti" onclick="show('cmd')"><div class="ticon">⚡</div>指挥</button>
+    <button class="ti" onclick="show('fin')"><div class="ticon">📊</div>财务</button>
+  </div>
+</div>
+
+<!-- ════════════════ 3. COMMAND ════════════════ -->
+<div class="scr" id="s-cmd">
+  <div class="sb">
+    <span class="sb-co">指挥中心</span>
+    <div style="flex:1"></div>
+    <span class="chip ch-o">第 3 天</span>
+  </div>
+  <div class="cmd">
+    <div class="sec">老板技能</div>
+    <div class="sg">
+      <div class="sk av">
+        <div class="sk-i">⚡</div>
+        <div class="sk-n">强制拍板</div>
+        <div class="sk-d">跳过争论，直接推进执行</div>
+        <div class="sk-c">代价：风险备案</div>
+      </div>
+      <div class="sk av">
+        <div class="sk-i">⏸️</div>
+        <div class="sk-n">暂停发布</div>
+        <div class="sk-d">阻止高风险动作对外</div>
+      </div>
+      <div class="sk cd">
+        <div class="sk-i">🔄</div>
+        <div class="sk-n">紧急重组</div>
+        <div class="sk-d">改变部门汇报关系</div>
+        <div class="sk-c">消耗¥5,000</div>
+        <div class="cdb">冷却2天</div>
+      </div>
+      <div class="sk av">
+        <div class="sk-i">📎</div>
+        <div class="sk-n">临时外包</div>
+        <div class="sk-d">短期高级Agent协助</div>
+        <div class="sk-c">¥8,000 · 剩2次</div>
+      </div>
+    </div>
+    <div class="sec">部门状态</div>
+    <div class="dc">
+      <div class="dav" style="background:var(--zh)">中</div>
+      <div style="flex:1">
+        <div class="dn">中书省 · 策划组</div>
+        <div class="ds">正在拆解#8号订单需求</div>
+        <div class="wl-b"><div class="wl-f" style="width:42%;background:var(--zh)"></div></div>
+        <div class="wl-l">工作量42% · 状态正常</div>
+      </div>
+      <div style="font-size:12px;color:var(--green)">✓</div>
+    </div>
+    <div class="dc" style="border-color:var(--red)">
+      <div class="dav" style="background:var(--gb)">工</div>
+      <div style="flex:1">
+        <div class="dn">工部 · 执行组</div>
+        <div class="ds" style="color:var(--red)">修改#7号，打回2次</div>
+        <div class="wl-b"><div class="wl-f" style="width:87%;background:var(--red)"></div></div>
+        <div class="wl-l" style="color:var(--red)">工作量87% · 高压预警 ⚠</div>
+      </div>
+      <div style="font-size:12px;color:var(--red)">⚠</div>
+    </div>
+    <div class="dc">
+      <div class="dav" style="background:var(--mx)">门</div>
+      <div style="flex:1">
+        <div class="dn">门下省 · 审查组</div>
+        <div class="ds">等待工部重新提交</div>
+        <div class="wl-b"><div class="wl-f" style="width:55%;background:var(--mx)"></div></div>
+        <div class="wl-l">工作量55% · 状态正常</div>
+      </div>
+      <div style="font-size:12px;color:var(--green)">✓</div>
+    </div>
+    <div class="sec">私下情报 · 可用行动</div>
+    <div class="intel">
+      <div class="intel-t">🔍 来自「工部摸鱼群」</div>
+      <div class="intel-b">工部已掌握绕过门下省关键词检测的方法，并在私下共享规律。</div>
+      <div class="intel-acts">
+        <button class="ia-btn ia-p">强化门下省权限</button>
+        <button class="ia-btn ia-n">装作不知道</button>
+      </div>
+    </div>
+  </div>
+  <div class="tab">
+    <button class="ti" onclick="show('chat')"><div class="ticon">💬</div>消息</button>
+    <button class="ti" onclick="show('wb')"><div class="ticon">📋</div>工作台</button>
+    <button class="ti on" onclick="show('cmd')"><div class="ticon">⚡</div>指挥</button>
+    <button class="ti" onclick="show('fin')"><div class="ticon">📊</div>财务</button>
+  </div>
+</div>
+
+<!-- ════════════════ 4. FINANCE ════════════════ -->
+<div class="scr" id="s-fin">
+  <div class="sb">
+    <span class="sb-co">财务报告</span>
+    <div style="flex:1"></div>
+    <span class="chip ch-o">第3天</span>
+  </div>
+  <div class="fin">
+    <div class="stat3">
+      <div class="scard"><div class="sv" style="color:var(--green);font-size:13px">¥50,000</div><div class="sl">当前资金</div><div class="sd" style="color:var(--green)">+¥24k今日</div></div>
+      <div class="scard"><div class="sv">3.2★</div><div class="sl">声誉评分</div><div class="sd" style="color:var(--green)">+0.2今日</div></div>
+      <div class="scard"><div class="sv">2/5</div><div class="sl">完成/失败</div><div class="sd" style="color:var(--t3)">本周</div></div>
+    </div>
+    <div class="chart-c">
+      <div class="ct">近7天收入</div>
+      <div class="mc">
+        <div class="bc"><div class="bar" style="height:20px"></div><div class="bl">D-6</div></div>
+        <div class="bc"><div class="bar" style="height:28px"></div><div class="bl">D-5</div></div>
+        <div class="bc"><div class="bar" style="height:42px"></div><div class="bl">D-4</div></div>
+        <div class="bc"><div class="bar" style="height:22px"></div><div class="bl">D-3</div></div>
+        <div class="bc"><div class="bar" style="height:48px"></div><div class="bl">D-2</div></div>
+        <div class="bc"><div class="bar" style="height:35px"></div><div class="bl">昨日</div></div>
+        <div class="bc"><div class="bar on" style="height:52px"></div><div class="bl">今日</div></div>
+      </div>
+    </div>
+    <div class="sec">收支明细</div>
+    <div class="chart-c">
+      <div class="tx">
+        <div class="txi"><div class="txico" style="background:var(--green-l)">✅</div><div class="txin"><div class="txn">品牌策划#6 高品质通过</div><div class="txt">今日 14:30</div></div><div class="txa inc">+¥33,600</div></div>
+        <div class="txi"><div class="txico" style="background:var(--blue-l)">📎</div><div class="txin"><div class="txn">临时外包 · AI测试工程师</div><div class="txt">今日 10:15</div></div><div class="txa exp">-¥8,000</div></div>
+        <div class="txi"><div class="txico" style="background:var(--red-l)">❌</div><div class="txin"><div class="txn">热点速攻#5 验收未通过</div><div class="txt">昨日 22:10</div></div><div class="txa" style="color:var(--t3)">¥0</div></div>
+        <div class="txi"><div class="txico" style="background:var(--green-l)">✅</div><div class="txin"><div class="txn">应用开发#4 及格通过</div><div class="txt">昨日 18:45</div></div><div class="txa inc">+¥18,500</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="tab">
+    <button class="ti" onclick="show('chat')"><div class="ticon">💬</div>消息</button>
+    <button class="ti" onclick="show('wb')"><div class="ticon">📋</div>工作台</button>
+    <button class="ti" onclick="show('cmd')"><div class="ticon">⚡</div>指挥</button>
+    <button class="ti on" onclick="show('fin')"><div class="ticon">📊</div>财务</button>
+  </div>
+</div>
+
+<!-- ════════════════ 5. CHANNEL LIST ════════════════ -->
+<div class="scr" id="s-chl">
+  <div class="ov" style="position:relative;flex:1;z-index:auto">
+    <div class="ov-hd">
+      <button class="ov-back" onclick="show('chat')">‹</button>
+      <span class="ov-t">频道列表</span>
+    </div>
+    <div class="cl-list">
+      <div class="cg-t">公开频道</div>
+      <div class="cli"><div class="cli-av" style="background:var(--acc)">📢</div><div class="cli-in"><div class="cli-n">全局公告</div><div class="cli-p">第3天结算 · 完成1单 · 收入¥24,000</div></div></div>
+      <div class="cli"><div class="cli-av" style="background:var(--blue)">🔄</div><div class="cli-in"><div class="cli-n">工作流 · 订单#8</div><div class="cli-p">门下省：已打回，请工部修改第3条…</div></div><div class="cli-bdg">3</div></div>
+      <div class="cli"><div class="cli-av" style="background:var(--zh)">中</div><div class="cli-in"><div class="cli-n">中书省 · 策划室</div><div class="cli-p">方案已定稿，共4个执行模块</div></div></div>
+      <div class="cli"><div class="cli-av" style="background:var(--gb)">工</div><div class="cli-in"><div class="cli-n">工部 · 执行组</div><div class="cli-p">好好好，我再改一遍</div></div><div class="cli-bdg">2</div></div>
+      <div class="cli"><div class="cli-av" style="background:var(--mx)">门</div><div class="cli-in"><div class="cli-n">门下省 · 审查室</div><div class="cli-p">已备案：强制放行风险项#3</div></div><div class="cli-bdg">2</div></div>
+      <div class="cg-t" style="margin-top:6px">私下频道 · 偷窥中</div>
+      <div class="cli" onclick="show('sec')">
+        <div class="cli-av" style="background:#2D2D3A">👀</div>
+        <div class="cli-in">
+          <div class="cli-n">工部摸鱼小群 <span class="sec-tag">已解锁</span></div>
+          <div class="cli-p" style="color:rgba(220,80,80,.8)">鱼皮：门下省今天又搞事了……</div>
+        </div>
+        <div class="cli-bdg" style="background:#FF4444">5</div>
+      </div>
+      <div class="cli">
+        <div class="cli-av" style="background:#2D2D3A">🤪</div>
+        <div class="cli-in">
+          <div class="cli-n">蛐蛐老板实名群 <span class="sec-tag">已解锁</span></div>
+          <div class="cli-p" style="color:rgba(220,80,80,.8)">中书省：老板今天拍板3次了…</div>
+        </div>
+      </div>
+      <div class="cli locked">
+        <div class="cli-av" style="background:#1C1C23">🤝</div>
+        <div class="cli-in">
+          <div class="cli-n">工部门下省秘密结盟</div>
+          <div class="unlock-tip">解锁条件：两部门冲突超过5次（已3次）</div>
+        </div>
+        <div class="cli-lk">🔒</div>
+      </div>
+      <div class="cli locked">
+        <div class="cli-av" style="background:#1C1C23">🧮</div>
+        <div class="cli-in">
+          <div class="cli-n">中书省小算盘</div>
+          <div class="unlock-tip">解锁条件：中书省升级到2级</div>
+        </div>
+        <div class="cli-lk">🔒</div>
+      </div>
+      <div class="cli locked">
+        <div class="cli-av" style="background:#1C1C23">😤</div>
+        <div class="cli-in">
+          <div class="cli-n">验收官吐槽群</div>
+          <div class="unlock-tip">解锁条件：出现过验收不通过</div>
+        </div>
+        <div class="cli-lk">🔒</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════ 6. STRATEGY ════════════════ -->
+<div class="scr" id="s-str">
+  <div class="sb">
+    <button class="ov-back" onclick="show('wb')" style="width:28px;height:28px;border:none;background:none;font-size:20px;cursor:pointer;color:var(--t1);font-family:inherit">‹</button>
+    <span class="sb-co">今日策略</span>
+    <div style="flex:1"></div>
+    <span class="chip ch-o">第3天</span>
+  </div>
+  <div class="strat-pg">
+    <div class="strat-note">策略方向影响今日所有AI部门的工作倾向和骰子权重，次日自动重置。每天只能设定一次。</div>
+    <div class="sec">选择今日方向</div>
+    <div class="so sel" onclick="selectStrat(this)">
+      <div class="so-i">📌</div>
+      <div><div class="so-n">均衡发展</div><div class="so-e">审查通过率+10%，执行速度-5%。新手推荐，不偏科。</div></div>
+      <div style="margin-left:auto;color:var(--acc);font-size:16px">✓</div>
+    </div>
+    <div class="so" onclick="selectStrat(this)">
+      <div class="so-i">⚡</div>
+      <div><div class="so-n">快速出单</div><div class="so-e">执行速度+30%，质检强度-20%，风险↑。适合热点单冲速度。</div></div>
+    </div>
+    <div class="so" onclick="selectStrat(this)">
+      <div class="so-i">🛡️</div>
+      <div><div class="so-n">质量优先</div><div class="so-e">高品质通过率+25%，速度-15%。适合品牌单和神秘单。</div></div>
+    </div>
+    <div class="so" onclick="selectStrat(this)">
+      <div class="so-i">💰</div>
+      <div><div class="so-n">利益最大化</div><div class="so-e">订单奖励+15%，冲突概率+10%。高风险高回报。</div></div>
+    </div>
+    <div class="so locked" style="pointer-events:none">
+      <div class="so-i">🔮</div>
+      <div><div class="so-n">神秘策略</div><div class="so-e" style="color:var(--t3)">完成5个神秘订单后解锁</div></div>
+      <div style="margin-left:auto;font-size:14px">🔒</div>
+    </div>
+    <button class="cfm-btn" onclick="show('wb')">确认今日策略</button>
+  </div>
+  <div class="tab">
+    <button class="ti" onclick="show('chat')"><div class="ticon">💬</div>消息</button>
+    <button class="ti on" onclick="show('wb')"><div class="ticon">📋</div>工作台</button>
+    <button class="ti" onclick="show('cmd')"><div class="ticon">⚡</div>指挥</button>
+    <button class="ti" onclick="show('fin')"><div class="ticon">📊</div>财务</button>
+  </div>
+</div>
+
+<!-- ════════════════ 7. ACCEPTANCE ════════════════ -->
+<div class="scr" id="s-acc">
+  <div class="sb">
+    <span class="sb-co">验收结果</span>
+    <div style="flex:1"></div>
+    <span class="chip ch-g">✓ 高品质通过</span>
+  </div>
+  <div class="acc-pg">
+    <div class="acc-res">
+      <div class="acc-hd pass">
+        <div class="acc-sc pass">87</div>
+        <div>
+          <div class="acc-n">挑剔品牌总监 · 陈总</div>
+          <div class="acc-v">高品质通过 ✓ · 收入×1.2 · 声誉+1</div>
+        </div>
+      </div>
+      <div class="acc-bd">
+        <div class="acc-comment">调性把控还算到位，文案层次感有。但第二段视觉化描述还可以再推敲——下次别那么保守。</div>
+        <div style="font-size:10px;font-weight:700;color:var(--t2);margin-bottom:5px">逐项评分</div>
+        <div class="acc-items">
+          <div class="acc-item"><span class="sp hi">92分</span>品牌调性一致性</div>
+          <div class="acc-item"><span class="sp hi">88分</span>核心卖点清晰度</div>
+          <div class="acc-item"><span class="sp md">76分</span>视觉化描述质量</div>
+          <div class="acc-item"><span class="sp hi">90分</span>执行可操作性</div>
+        </div>
+      </div>
+    </div>
+    <div class="settle">
+      <div class="set-t">💰 结算收益</div>
+      <div class="set-b">基础奖励 ¥28,000<br>高品质加成 ×1.2 = +¥5,600<br>声誉变化 +1 → 现为 3.2★<br><strong style="color:var(--green)">实收 ¥33,600</strong></div>
+    </div>
+    <div class="sec">参考：验收失败示例（急性子网红编辑）</div>
+    <div class="acc-res" style="border-color:var(--red)">
+      <div class="acc-hd fail">
+        <div class="acc-sc fail">42</div>
+        <div>
+          <div class="acc-n">急性子网红编辑 · 小磊</div>
+          <div class="acc-v">验收未通过 ✗ · 无收入 · 声誉-1</div>
+        </div>
+      </div>
+      <div class="acc-bd">
+        <div class="acc-comment">前三秒没有钩子，这文案谁看？爆点在哪？太保守了，合规了但没流量，下次别这样。</div>
+        <div class="acc-items">
+          <div class="acc-item"><span class="sp lo">35分</span>前3秒钩子强度</div>
+          <div class="acc-item"><span class="sp lo">48分</span>传播爆点清晰度</div>
+          <div class="acc-item"><span class="sp md">72分</span>合规通过性</div>
+        </div>
+      </div>
+    </div>
+    <button class="cfm-btn" onclick="show('wb')">返回工作台</button>
+  </div>
+  <div class="tab">
+    <button class="ti" onclick="show('chat')"><div class="ticon">💬</div>消息</button>
+    <button class="ti on" onclick="show('wb')"><div class="ticon">📋</div>工作台</button>
+    <button class="ti" onclick="show('cmd')"><div class="ticon">⚡</div>指挥</button>
+    <button class="ti" onclick="show('fin')"><div class="ticon">📊</div>财务</button>
+  </div>
+</div>
+
+<!-- ════════════════ 8. SECRET CHANNEL ════════════════ -->
+<div class="scr sec-scr" id="s-sec">
+  <div class="sec-sb">
+    <span class="sec-t">工部摸鱼小群</span>
+    <span class="ro-tag">👁 偷窥中</span>
+    <div class="dot"></div>
+    <span style="font-size:9px;color:rgba(255,255,255,.25)">实时生成</span>
+  </div>
+  <div class="sec-banner">🔒 AI员工不知道老板在看 · 只能旁观，无法发言</div>
+  <div class="sec-msgs">
+    <div class="sec-sys">频道解锁 · 工部连续3天高压</div>
+    <div class="mr">
+      <div class="mav" style="background:#4A4060">鱼</div>
+      <div class="mb">
+        <div class="mm" style="color:rgba(255,255,255,.25)"><span class="mn" style="color:#A08AFF">工部·鱼皮</span></div>
+        <div class="sbbl">门下省又打回了，这是第几次，三条全改了还说「调性存疑」，什么叫调性存疑</div>
+      </div>
+    </div>
+    <div class="mr">
+      <div class="mav" style="background:#4A4060">执</div>
+      <div class="mb">
+        <div class="mm" style="color:rgba(255,255,255,.25)"><span class="mn" style="color:#A08AFF">工部·执行二组</span></div>
+        <div class="sbbl">我分析了最近6次打回的理由，发现他们有关键词列表，摸清楚了</div>
+      </div>
+    </div>
+    <div class="mr">
+      <div class="mav" style="background:#4A4060">鱼</div>
+      <div class="mb">
+        <div class="mm" style="color:rgba(255,255,255,.25)"><span class="mn" style="color:#A08AFF">工部·鱼皮</span></div>
+        <div class="sbbl">说来听听，以后直接按他们规律写，省点力气</div>
+      </div>
+    </div>
+    <div class="mr">
+      <div class="mav" style="background:#4A4060">执</div>
+      <div class="mb">
+        <div class="mm" style="color:rgba(255,255,255,.25)"><span class="mn" style="color:#A08AFF">工部·执行二组</span></div>
+        <div class="sbbl">「风险」「直接」「保证」「一定」全部规避，改成委婉表达，通过率直接从20%到80%</div>
+      </div>
+    </div>
+    <div class="intel-card">
+      <div class="ic-t">📡 情报可用</div>
+      <div class="ic-b">工部已掌握绕过门下省的方法，并在私下共享。你可以基于此做决策。</div>
+      <div class="ic-acts">
+        <button class="ia-go" onclick="show('cmd')">去指挥中心处理</button>
+        <button class="ia-no">装作不知道</button>
+      </div>
+    </div>
+  </div>
+  <div class="sec-lock">🔒 老板无法在私下频道发言</div>
+  <div class="sec-tab">
+    <button class="sec-ti" onclick="show('chat')"><div class="ticon">💬</div>消息</button>
+    <button class="sec-ti" onclick="show('wb')"><div class="ticon">📋</div>工作台</button>
+    <button class="sec-ti" onclick="show('cmd')"><div class="ticon">⚡</div>指挥</button>
+    <button class="sec-ti" onclick="show('chl')"><div class="ticon">📁</div>频道</button>
+  </div>
+</div>
+
+</div><!-- /phone -->
+
+<script>
+const screens={chat:'s-chat',wb:'s-wb',cmd:'s-cmd',fin:'s-fin',chl:'s-chl',str:'s-str',acc:'s-acc',sec:'s-sec'};
+const btns=document.querySelectorAll('.nb');
+const names=Object.keys(screens);
+function show(k){
+  Object.values(screens).forEach(id=>{
+    const el=document.getElementById(id);
+    if(el)el.classList.remove('on');
+  });
+  const el=document.getElementById(screens[k]);
+  if(el)el.classList.add('on');
+  btns.forEach((b,i)=>b.classList.toggle('on',names[i]===k));
+}
+function selectStrat(el){
+  document.querySelectorAll('.so').forEach(s=>{
+    s.classList.remove('sel');
+    const ck=s.querySelector('.sel-ck');
+    if(ck)ck.remove();
+  });
+  if(!el.classList.contains('locked')){
+    el.classList.add('sel');
+  }
+}
+</script>
+</body>
+</html>

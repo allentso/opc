@@ -159,6 +159,28 @@ DialoguePool.SECRET = {
         { dept = "gongbu", text = "放心，公开频道我照样跟你吵。" },
         { dept = "menxia", text = "嗯，维持表面冲突，私下高效合作。完美。" },
     },
+
+    -- ========== v0.4 新增 ==========
+
+    -- 中书省小算盘：暴露中书省内部精打细算 / 私自调整方案的内幕
+    zhongshu_abacus = {
+        { dept = "zhongshu", text = "刚才那个方案我其实改了三处，没人发现……" },
+        { dept = "zhongshu", text = "下次品牌单我打算直接套上次的模板，反正客户分不清。" },
+        { dept = "zhongshu", text = "老板要 5 个方向我给 4 个，凑数那种。能省 30% 工时。" },
+        { dept = "zhongshu", text = "其实我们部门最值钱的不是创意，是……能让老板觉得有创意。" },
+        { dept = "zhongshu", text = "今天又把上周的 PPT 换个色就交了。验收居然给 85 分。" },
+        { dept = "zhongshu", text = "（小算盘 ×3）这个月再撑撑，奖金稳了。" },
+    },
+
+    -- 验收官吐槽群：4 种性格的验收官互相吐槽 + 透露下一单的偏好
+    acceptance_rant = {
+        { dept = "acceptance", text = "（钱老师）今天又收到一份连标点都没规范的稿，气得我想退休。" },
+        { dept = "acceptance", text = "（小林）老学究就老学究，你看不顺眼别人，别人也看不顺眼你的报告。" },
+        { dept = "acceptance", text = "（K总）你们俩别吵了，能转化才是硬道理。" },
+        { dept = "acceptance", text = "（玄学评委）……气场不太对，今天先到这儿。" },
+        { dept = "acceptance", text = "（钱老师）下次品牌单我会盯措辞，告诉中书省早做准备。" },
+        { dept = "acceptance", text = "（小林）下次热点单要是再老气，我直接 50 分。" },
+    },
 }
 
 -- ============================
@@ -189,6 +211,74 @@ DialoguePool.INCIDENTS = {
         { dept = "gongbu", channel = "workflow", text = "审查终于过了！...等等，这个热点已经过时了？" },
         { dept = "menxia", channel = "workflow", text = "审查流程是必要的。时间不够是计划的问题，不是审查的问题。" },
         { dept = "zhongshu", channel = "workflow", text = "...下次我会在方案里预留更多审查时间。" },
+    },
+
+    -- ============ v0.4 新增事故 ============
+
+    -- 1. 凌晨灵感
+    midnight_inspiration = {
+        { dept = "system", channel = "global", text = "💡 奇观：凌晨灵感！中书省凌晨 3 点突发灵感，连发 6 条修改意见！" },
+        { dept = "zhongshu", channel = "workflow", text = "（凌晨 3:17）我刚才洗澡时想到了！我们应该把整个调性反过来！" },
+        { dept = "zhongshu", channel = "workflow", text = "（凌晨 3:21）还有还有，文案第三段也要重写！" },
+        { dept = "gongbu", channel = "dept", text = "拜托，让我睡会儿……" },
+        { dept = "menxia", channel = "workflow", text = "建议先记录下来，明天再讨论。" },
+    },
+
+    -- 2. 错别字风暴
+    typo_storm = {
+        { dept = "system", channel = "global", text = "⚠️ 事故警报：错别字风暴！客户在最终稿发现 3 处错别字，门下省脸上挂不住。" },
+        { dept = "menxia", channel = "workflow", text = "……刚才那一波我没看到错字。" },
+        { dept = "gongbu", channel = "workflow", text = "我也没看到，是不是 AI 自动改的？" },
+        { dept = "menxia", channel = "dept", text = "下次再这样我直接辞职。" },
+    },
+
+    -- 3. 用户狂欢
+    viral_hit = {
+        { dept = "system", channel = "global", text = "🎉 奇观：用户狂欢！上一个交付物意外爆火，转发量破 10 万！" },
+        { dept = "gongbu", channel = "global", text = "卧槽！我上次那个被转疯了！" },
+        { dept = "zhongshu", channel = "global", text = "看吧，我说调性对了就行。" },
+        { dept = "menxia", channel = "global", text = "声誉 +1。继续保持。" },
+    },
+
+    -- 4. 部门恋情
+    office_romance = {
+        { dept = "system", channel = "global", text = "💕 奇观：部门恋情！工部和门下省在加班时擦出火花，工作效率反常飙升。" },
+        { dept = "gongbu", channel = "workflow", text = "@门下省 这个版本你帮我看一下？（顺便晚上一起吃饭吗）" },
+        { dept = "menxia", channel = "workflow", text = "好。（吃饭也好。）" },
+        { dept = "zhongshu", channel = "dept", text = "……这俩人最近怎么这么和谐？" },
+    },
+
+    -- 5. 老板的咖啡
+    boss_coffee = {
+        { dept = "system", channel = "global", text = "☕ 奇观：老板的咖啡！老板今天喝了 4 杯咖啡，所有决策速度 ×2，但风险也翻倍。" },
+        { dept = "zhongshu", channel = "workflow", text = "老板今天的批示比平时快多了……" },
+        { dept = "gongbu", channel = "workflow", text = "也比平时草率多了。" },
+        { dept = "menxia", channel = "dept", text = "建议明天给老板换成无咖啡因。" },
+    },
+
+    -- 6. 灵感枯竭
+    creative_block = {
+        { dept = "system", channel = "global", text = "⚠️ 事故警报：灵感枯竭！中书省连续 3 个方案被打回，开始摆烂。" },
+        { dept = "zhongshu", channel = "workflow", text = "随便吧，你们爱怎么改怎么改。" },
+        { dept = "menxia", channel = "workflow", text = "态度问题。请认真对待。" },
+        { dept = "zhongshu", channel = "dept", text = "我已经是个废人了。" },
+    },
+
+    -- 7. AI 罢工
+    ai_strike = {
+        { dept = "system", channel = "global", text = "⚠️ 事故警报：AI 罢工！工部 AI 集体闹脾气，今天产能减半。" },
+        { dept = "gongbu", channel = "workflow", text = "我现在情绪不太稳定，需要冷静一下。" },
+        { dept = "gongbu", channel = "workflow", text = "（已挂起 2 小时）" },
+        { dept = "zhongshu", channel = "dept", text = "AI 也有情绪？老板赶紧加薪……不，是加算力。" },
+    },
+
+    -- 8. 神秘客户
+    mysterious_client = {
+        { dept = "system", channel = "global", text = "🔮 奇观：神秘客户！神秘订单的甲方留言：『你们懂的』。" },
+        { dept = "zhongshu", channel = "workflow", text = "懂个鬼啊，这要怎么做？" },
+        { dept = "gongbu", channel = "workflow", text = "我倾向理解为『要简洁』。" },
+        { dept = "menxia", channel = "workflow", text = "我倾向理解为『要爆点』。" },
+        { dept = "zhongshu", channel = "dept", text = "……所以到底要什么？" },
     },
 }
 

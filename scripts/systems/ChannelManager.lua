@@ -69,10 +69,11 @@ function ChannelManager.Init()
         ChannelManager._addChannel({
             id = "secret_" .. sc.id,
             name = sc.name,
-            icon = "🔒",
+            icon = sc.icon or "👁",
             type = "secret",
             readonly = true,
             visible = false,
+            condition = sc.condition,
         })
     end
 
@@ -198,7 +199,7 @@ function ChannelManager.UnlockSecretChannel(secretId)
     if ch.visible then return end -- 已解锁
 
     ch.visible = true
-    ch.icon = "👁"
+    -- 保留 SECRET_CHANNELS 配置的原始 icon
 
     EventBus.Emit(E.CHANNEL_UNLOCKED, fullId, ch.name)
     EventBus.Emit(E.UI_TOAST, "🔓 发现新频道: " .. ch.name)

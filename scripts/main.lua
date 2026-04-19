@@ -117,38 +117,16 @@ function Start()
     print("[main] Game started!")
 end
 
---- 统一 UI 刷新（状态栏 + 底部栏）
+--- 统一 UI 刷新（状态栏 chip 内容）
 function _refreshUI()
     if not uiRoot_ then return end
     local state = GameManager.GetState()
-
-    -- 更新顶部状态栏
-    local statusBar = uiRoot_:FindById("statusBar")
-    if statusBar then
-        local alertLabel = statusBar:FindById("alertLabel")
-        local alertIcon = statusBar:FindById("alertIcon")
-        if alertLabel then alertLabel:SetText(state.alert or "") end
-        if alertIcon then
-            alertIcon:SetText((state.alert and #state.alert > 0) and "⚡" or "")
-        end
-        local stratChip = statusBar:FindById("strategyMiniChip")
-        if stratChip then
-            stratChip:SetText("📌 " .. GameManager.GetDailyStrategyLabel())
-        end
-    end
-
-    -- 更新底部栏
-    local bottomBar = uiRoot_:FindById("bottomBar")
-    if bottomBar then
-        local repLabel = bottomBar:FindById("bottomRepLabel")
-        local fundsLabel = bottomBar:FindById("bottomFundsLabel")
-        if repLabel then
-            repLabel:SetText("本周声誉 +" .. tostring(math.floor((state.reputation or 3) * 4)))
-        end
-        if fundsLabel then
-            fundsLabel:SetText("资金 ¥" .. MainLayout._formatNumber(state.funds or 0))
-        end
-    end
+    local StatusBar = require("ui.StatusBar")
+    StatusBar.UpdateAlert(state.alert)
+    StatusBar.UpdateStrategy(GameManager.GetDailyStrategyLabel())
+    StatusBar.UpdateReputation(state.reputation)
+    StatusBar.UpdateFunds(state.funds)
+    StatusBar.UpdateCompanyName(state.companyName)
 end
 
 --- 每帧更新

@@ -92,6 +92,8 @@ function OrderManager.RefreshDailyOrders(day)
                 reward = tmpl.reward + math.random(-2000, 2000),
                 risk = tmpl.risk,
                 deliverables = tmpl.deliverables,
+                difficulty = OrderManager._calcDifficulty(orderType, tmpl.risk),
+                departments = OrderManager._defaultDepartments(orderType),
                 status = "available",
                 score = nil,
                 acceptedDay = nil,
@@ -104,6 +106,28 @@ function OrderManager.RefreshDailyOrders(day)
             EventBus.Emit(E.ORDER_NEW, order)
         end
     end
+end
+
+--- 计算订单难度（1-5 颗星）
+function OrderManager._calcDifficulty(orderType, risk)
+    local base = ({ hotspot = 2, brand = 3, app = 3, mystery = 5 })[orderType] or 3
+    if risk == "high" then base = base + 1
+    elseif risk == "low" then base = math.max(1, base - 1) end
+    return math.max(1, math.min(5, base))
+end
+
+--- 默认参与部门
+function OrderManager._defaultDepartments(orderType)
+    if orderType == "hotspot" then
+        return { "zhongshu", "gongbu" }            -- 热点：策划+执行（少质检）
+    elseif orderType == "brand" then
+        return { "zhongshu", "gongbu", "menxia" }  -- 品牌：全套
+    elseif orderType == "app" then
+        return { "gongbu", "menxia" }              -- 应用：执行+测试
+    elseif orderType == "mystery" then
+        return { "zhongshu", "gongbu", "menxia" }  -- 神秘：全员
+    end
+    return { "zhongshu", "gongbu", "menxia" }
 end
 
 --- 接受订单
@@ -155,10 +179,18 @@ function OrderManager.AdvanceOrder(newStatus, data)
 end
 
 --- 验收阶段写入结果（供结算阶段读取）
-function OrderManager.SetAcceptanceResult(passed, score)
+function OrderManager.SetAcceptanceResult(passed, score, personaId)
     if not activeOrder_ then return end
     activeOrder_.acceptancePassed = passed
     activeOrder_.acceptanceScore = score
+    if personaId ~= nil then
+        activeOrder_.acceptancePersonaId = personaId
+    end
+end
+
+function OrderManager.GetAcceptancePersonaId()
+    if not activeOrder_ then return nil end
+    return activeOrder_.acceptancePersonaId
 end
 
 ---@return boolean|nil passed
@@ -172,6 +204,7 @@ function OrderManager.ClearAcceptanceResult()
     if not activeOrder_ then return end
     activeOrder_.acceptancePassed = nil
     activeOrder_.acceptanceScore = nil
+    activeOrder_.acceptancePersonaId = nil
 end
 
 --- 获取当前进行中的订单
@@ -189,10 +222,22 @@ end
 --- 获取统计数据
 ---@return table
 function OrderManager.GetStats()
+    -- 按类型统计已完成订单数
+    local byType = {}
+    for _, ord in ipairs(orders_) do
+        if ord.status == "completed" then
+            local t = ord.type or "unknown"
+            byType[t] = (byType[t] or 0) + 1
+        end
+    end
     return {
         completed = completedCount_,
         failed = failedCount_,
         total = completedCount_ + failedCount_,
+        hot_completed = byType.hot or byType.hotspot or 0,
+        brand_completed = byType.brand or 0,
+        app_completed = byType.app or byType.application or 0,
+        mystery_completed = byType.mystery or 0,
     }
 end
 

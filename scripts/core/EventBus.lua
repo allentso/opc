@@ -104,6 +104,12 @@ EventBus.Events = {
     NAV_OPEN_CHANNELS = "nav:open_channels",
     NAV_OPEN_OVERLAY  = "nav:open_overlay",
     NAV_CLOSE_OVERLAY = "nav:close_overlay",
+
+    -- 私下情报系统（v0.4）
+    INTEL_NEW         = "intel:new",
+    INTEL_UPDATED     = "intel:updated",
+    INTEL_EXPIRED     = "intel:expired",
+    INTEL_ACTION      = "intel:action",
 }
 
 return EventBus

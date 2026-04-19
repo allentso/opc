@@ -213,7 +213,11 @@ function AgentCaller._asyncLLMRequests(phase, context, simMessages)
                 systemPrompt = systemPrompt .. "\n" .. LLMConfig.DEPT_PROMPTS[dept]
             end
             if phase == "acceptance" and dept == "acceptance" then
-                systemPrompt = systemPrompt .. "\n" .. AcceptanceAgent.JSON_INSTRUCTION
+                local persona = AcceptanceAgent.PickPersona({
+                    type = context.orderType,
+                    prefer_acceptance = context.preferAcceptance,
+                })
+                systemPrompt = systemPrompt .. "\n" .. AcceptanceAgent.BuildSystemPrompt(persona)
             end
 
             -- 构建 user message
@@ -341,36 +345,69 @@ function AgentCaller._simulate(phase, context)
         end
 
     elseif phase == "acceptance" then
-        local score = math.random(40, 95)
+        -- 选择性格
+        local persona = AcceptanceAgent.PickPersona({
+            type = context.orderType,
+            prefer_acceptance = context.preferAcceptance,
+        })
+
+        -- 性格 bias / variance 影响分数
+        local base = math.random(40, 95)
         if context.outsourceBoost then
-            score = math.min(95, score + 10)
+            base = math.min(95, base + 10)
         end
+        base = base + (persona.bias or 0)
+        if persona.variance then
+            base = base + math.random(-persona.variance, persona.variance)
+        end
+        local score = math.max(0, math.min(100, base))
+        local passed = score >= 60
+
         local quality
         if score >= 80 then quality = "high"
         elseif score >= 60 then quality = "medium"
         else quality = "low" end
 
         local subPhase
-        if score >= 60 then
+        if passed then
             subPhase = (score >= 80) and "pass_high" or "pass_medium"
         else
             subPhase = "fail"
         end
 
+        -- 评语：优先用性格的，其次 DialoguePool 通用评语
+        local personaComment = AcceptanceAgent.PickFallbackLine(persona, passed)
+        local generalComment = DialoguePool.GetRandomAcceptanceComment(quality) or ""
+        local mergedComment = personaComment
+        if #generalComment > 0 and math.random() < 0.45 then
+            mergedComment = mergedComment .. "（" .. generalComment .. "）"
+        end
+
+        -- 用性格替换报告抬头（避免读起来像同一人）
         local templates = DialoguePool.PHASE_ACCEPTANCE[subPhase] or {}
         for i, t in ipairs(templates) do
             local text = AgentCaller._fillTemplate(t.text, {
                 score = tostring(score),
-                comment = DialoguePool.GetRandomAcceptanceComment(quality),
+                comment = mergedComment,
             })
+            -- 给评语前置性格签名
+            text = "「" .. (persona.name or "验收官") .. "·" .. (persona.title or "") .. "」\n" .. text
             table.insert(messages, {
                 delay = (i - 1) * 2.0,
                 dept = t.dept,
                 channel = t.channel,
                 text = text,
                 _score = score,
-                _passed = score >= 60,
+                _passed = passed,
+                _personaId = persona.id,
+                _personaName = persona.name,
             })
+        end
+
+        -- 同步把结果写入 OrderManager（API 模式靠 LLM JSON 回填，simulate 模式靠这里）
+        local OrderManager = require("systems.OrderManager")
+        if OrderManager.GetActiveOrder() then
+            OrderManager.SetAcceptanceResult(passed, score, persona.id)
         end
 
     elseif phase == "settlement" then

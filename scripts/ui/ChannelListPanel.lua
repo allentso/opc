@@ -86,9 +86,9 @@ function ChannelListPanel.Create()
                                         gap = 6,
                                         children = {
                                             UI.Label {
-                                                text = "🔒 私下频道",
+                                                text = "👁 私下频道",
                                                 fontSize = 12,
-                                                fontColor = C.channel_secret,
+                                                fontColor = C.danger,
                                                 fontWeight = "bold",
                                             },
                                             UI.Label {
@@ -194,107 +194,146 @@ function ChannelListPanel.Refresh()
     end
 end
 
---- 创建单个频道条目（竖屏大触控区域）
+--- 创建单个频道条目（v0.4：方形头像 + 名称+预览 + 右侧时间+未读）
 function ChannelListPanel._createChannelItem(channel, activeId)
     local isActive = (channel.id == activeId)
     local isSecret = (channel.type == "secret")
 
-    local nameColor = isActive and C.text_primary or C.text_secondary
+    local nameColor = isActive and C.text_primary or C.text_primary
     local bgColor = isActive and C.bg_selected or { 0, 0, 0, 0 }
 
-    -- 频道图标
-    local iconText = isSecret and (channel.icon or "🔒") or "#"
+    -- 头像（与左侧 sidebar 一致：方形彩底）
     local deptId = channel.dept or channel.id
-    local badgeColor = GameConfig.DEPT_BADGE_COLORS[deptId] or C.accent
-    local shortName = GameConfig.DEPT_SHORT[deptId] or string.sub(channel.name, 1, 3)
+    local iconText, badgeColor
+    if isSecret then
+        iconText = channel.icon or "🔒"
+        badgeColor = C.channel_secret_bg
+    elseif deptId == "global" then
+        iconText = "📢"; badgeColor = GameConfig.DEPT_BADGE_COLORS.global
+    elseif deptId == "workflow" then
+        iconText = "🔄"; badgeColor = GameConfig.DEPT_BADGE_COLORS.workflow
+    else
+        local pure = type(deptId) == "string" and deptId:match("^dept_(.+)$") or deptId
+        iconText = GameConfig.DEPT_SHORT[pure] or string.sub(channel.name or "?", 1, 1)
+        badgeColor = GameConfig.DEPT_BADGE_COLORS[pure] or C.accent
+    end
 
-    -- 最后一条消息预览
+    -- 最后一条消息预览 + 时间
     local lastMsg = ""
+    local lastTime = ""
     if channel.messages and #channel.messages > 0 then
         local msg = channel.messages[#channel.messages]
         local senderPrefix = ""
         if msg.dept then
             local deptName = GameConfig.DEPT_NAMES[msg.dept]
-            if deptName then senderPrefix = deptName .. ": " end
+            if deptName then senderPrefix = deptName .. "：" end
         elseif msg.isBoss then
-            senderPrefix = "老板: "
+            senderPrefix = "老板："
         end
         lastMsg = senderPrefix .. (msg.text or "")
-        if #lastMsg > 28 then
-            lastMsg = string.sub(lastMsg, 1, 28) .. "..."
+        if #lastMsg > 36 then
+            lastMsg = string.sub(lastMsg, 1, 36) .. "…"
         end
+        lastTime = msg.timestamp and os.date("%H:%M", msg.timestamp) or os.date("%H:%M")
+    elseif isSecret then
+        lastMsg = "👁 " .. (channel.condition or "暗中观察…")
+    else
+        lastMsg = "暂无消息"
     end
 
-    local item = UI.Panel {
+    -- 频道名颜色：私下频道用红色字 + 偷窥角标
+    local channelNameColor = isSecret and C.danger or nameColor
+
+    return UI.Panel {
         id = "ch_" .. channel.id,
         width = "100%",
         height = GameConfig.UI.channel_item_height,
         flexDirection = "row",
         alignItems = "center",
-        paddingLeft = 16, paddingRight = 16,
-        gap = 12,
+        paddingLeft = 14, paddingRight = 14,
+        gap = 10,
         backgroundColor = bgColor,
         cursor = "pointer",
         onClick = function()
             ChannelManager.SwitchChannel(channel.id)
             ChannelListPanel.Refresh()
         end,
-        onPointerEnter = function(_, widget)
+        onPointerEnter = function(_, w)
             if channel.id ~= ChannelManager.GetActiveChannelId() then
-                widget:SetStyle({ backgroundColor = C.bg_hover })
+                w:SetStyle({ backgroundColor = C.bg_hover })
             end
         end,
-        onPointerLeave = function(_, widget)
+        onPointerLeave = function(_, w)
             if channel.id ~= ChannelManager.GetActiveChannelId() then
-                widget:SetStyle({ backgroundColor = { 0, 0, 0, 0 } })
+                w:SetStyle({ backgroundColor = { 0, 0, 0, 0 } })
             end
         end,
         children = {
-            -- 左侧圆形图标
+            -- 头像方块
             UI.Panel {
-                width = 36, height = 36,
-                borderRadius = 18,
-                backgroundColor = isSecret and C.channel_secret or badgeColor,
-                justifyContent = "center",
-                alignItems = "center",
+                width = 38, height = 38,
+                borderRadius = 9,
+                backgroundColor = badgeColor,
+                justifyContent = "center", alignItems = "center",
                 flexShrink = 0,
                 children = {
                     UI.Label {
-                        text = isSecret and iconText or shortName,
-                        fontSize = isSecret and 16 or 13,
+                        text = iconText or "?",
+                        fontSize = 16,
                         fontColor = C.text_white,
                         fontWeight = "bold",
                     },
                 },
             },
-
-            -- 中间：频道名 + 最后消息
+            -- 名称 + 预览
             UI.Panel {
-                flexGrow = 1,
-                flexShrink = 1,
+                flexGrow = 1, flexShrink = 1,
                 flexDirection = "column",
-                gap = 3,
+                gap = 2,
                 children = {
-                    UI.Label {
-                        text = channel.name,
-                        fontSize = 14,
-                        fontColor = nameColor,
-                        fontWeight = isActive and "bold" or "normal",
+                    UI.Panel {
+                        flexDirection = "row",
+                        alignItems = "center",
+                        gap = 5,
+                        children = {
+                            UI.Label {
+                                text = channel.name or "频道",
+                                fontSize = 13,
+                                fontColor = channelNameColor,
+                                fontWeight = isActive and "bold" or "normal",
+                            },
+                            isSecret and UI.Label {
+                                text = "👁",
+                                fontSize = 10,
+                                fontColor = C.danger,
+                            } or UI.Panel { width = 0, height = 0 },
+                        },
                     },
                     UI.Label {
                         text = lastMsg,
-                        fontSize = 11,
+                        fontSize = 10,
                         fontColor = C.text_muted,
                     },
                 },
             },
-
-            -- 右侧：未读标记
-            ChannelListPanel._createUnreadBadge(channel),
+            -- 右侧：时间 + 未读
+            UI.Panel {
+                flexDirection = "column",
+                alignItems = "flex-end",
+                justifyContent = "center",
+                gap = 4,
+                flexShrink = 0,
+                children = {
+                    UI.Label {
+                        text = lastTime,
+                        fontSize = 9,
+                        fontColor = C.text_muted,
+                    },
+                    ChannelListPanel._createUnreadBadge(channel),
+                },
+            },
         },
     }
-
-    return item
 end
 
 --- 创建未读标记

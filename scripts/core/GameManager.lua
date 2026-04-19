@@ -10,6 +10,7 @@ local OrderManager = require("systems.OrderManager")
 local BossSkillSystem = require("systems.BossSkillSystem")
 local SecretChannelSystem = require("systems.SecretChannelSystem")
 local EventSystem = require("systems.EventSystem")
+local IntelSystem = require("systems.IntelSystem")
 local ShareCardSystem = require("systems.ShareCardSystem")
 local AgentCaller = require("agent.AgentCaller")
 local ChannelListPanel = require("ui.ChannelListPanel")
@@ -57,6 +58,7 @@ function GameManager.Init()
     BossSkillSystem.Init()
     SecretChannelSystem.Init()
     EventSystem.Init()
+    IntelSystem.Init()
     ShareCardSystem.Init()
 
     -- 注册事件监听
@@ -147,6 +149,49 @@ function GameManager._registerEvents()
             OrderManager.SetAcceptanceResult(passed, score)
         end
     end)
+
+    -- 私下情报应对动作
+    EventBus.On(E.INTEL_ACTION, function(intel, action)
+        GameManager._applyIntelAction(intel, action)
+    end)
+end
+
+--- 应用情报应对动作的效果
+function GameManager._applyIntelAction(intel, action)
+    if not intel or not action then return end
+
+    -- 扣费（如有）
+    if action.cost and action.cost > 0 then
+        if state_.funds < action.cost then
+            EventBus.Emit(E.UI_TOAST, "❌ 资金不足，无法执行：" .. (action.label or ""))
+            return
+        end
+        GameManager.ChangeFunds(-action.cost, "情报应对：" .. (action.label or ""))
+    end
+
+    -- 切换今日策略（如指定）
+    if action.applyStrategy then
+        GameManager.SetDailyStrategy(action.applyStrategy)
+    end
+
+    -- 默认效果：根据 actionId 给出反馈消息
+    local feedback = ({
+        boost_morale       = "📣 公开嘉奖工部，士气暂时回稳。",
+        ignore             = "你选择无视。但事情大概不会自己消失。",
+        give_break         = "🍵 你给中书省安排了一天放空，明天看疗效。",
+        polish_more        = "💎 已切换为质量优先策略，验收风险降低。",
+        mediate            = "🤝 召开了部门协调会，气氛缓和。",
+        show_off_results   = "💼 你公开秀了下成绩单，吐槽暂止。",
+        warn_secretly      = "👀 已暗中警告，他们会收敛一点。",
+        let_it_be          = "默许现状。短期效率上去了，长期……再看。",
+    })[action.id] or ("已执行：" .. (action.label or ""))
+
+    EventBus.Emit(E.UI_TOAST, feedback)
+    ChannelManager.PushMessage("global", {
+        sender = "系统",
+        text = "💡 应对情报【" .. (intel.title or "") .. "】：" .. feedback,
+        isSystem = true,
+    })
 end
 
 --- 开始游戏
@@ -247,6 +292,11 @@ end
 
 function GameManager.GetDailyStrategy()
     return state_.dailyStrategy
+end
+
+--- 当前工作流阶段（"accept"|"execute"|"review"|"acceptance"|"settlement"|nil）
+function GameManager.GetWorkflowPhase()
+    return workflowPhase_
 end
 
 function GameManager.GetDailyStrategyLabel()
@@ -508,6 +558,7 @@ function GameManager._advanceWorkflow(nextPhase)
         local msgs = AgentCaller.GenerateWorkflowMessages("acceptance", context)
         local score = 70
         local passed = true
+        local personaId = nil
         for _, msg in ipairs(msgs) do
             GameManager._enqueueMessage(msg.delay + 0.5, msg.channel, {
                 dept = msg.dept,
@@ -515,8 +566,9 @@ function GameManager._advanceWorkflow(nextPhase)
             })
             if msg._score then score = msg._score end
             if msg._passed ~= nil then passed = msg._passed end
+            if msg._personaId then personaId = msg._personaId end
         end
-        OrderManager.SetAcceptanceResult(passed, score)
+        OrderManager.SetAcceptanceResult(passed, score, personaId)
         -- 延迟推送验收摘要（结算由计时器进入 settlement，不依赖消息队列）
         GameManager._enqueueMessage(#msgs * 2.0 + 2.0, "workflow", {
             sender = "系统",
@@ -525,6 +577,15 @@ function GameManager._advanceWorkflow(nextPhase)
                 or ("❌ 验收未通过。评分: " .. score .. "/100"),
             isSystem = true,
         })
+        -- 通知验收结果全屏页（UI 自行决定是否打开）
+        local reasonText = ""
+        for _, msg in ipairs(msgs) do
+            if msg.dept == "acceptance" then
+                reasonText = msg.text or ""
+                break
+            end
+        end
+        EventBus.Emit(E.WORKFLOW_ACCEPTANCE_PARSED, passed, score, reasonText)
 
     elseif nextPhase == "settlement" then
         local passed, score = OrderManager.GetAcceptanceResult()
